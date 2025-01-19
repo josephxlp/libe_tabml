@@ -7,6 +7,16 @@ from glob import glob
 from concurrent.futures import ThreadPoolExecutor
 from scipy.stats import zscore
 
+def list_files_by_tilenames(RES_DPATH, X, tilenames):
+    fparquet_list =  []
+    tile_files_list = []
+    for tilename in tilenames:
+        tile_files, fparquet = get_tile_files(RES_DPATH, X, tilename)
+        fparquet_list.append(fparquet)
+        tile_files_list.append(tile_files)
+
+    return fparquet_list,tile_files_list
+
 def filter_files_by_endingwith(files, var_ending):
     filtered_files = []
     for ending in var_ending:

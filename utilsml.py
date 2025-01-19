@@ -105,7 +105,11 @@ def train_catboost(X_train, y_train, X_valid, y_valid, num_rounds=10000, gpu=Fal
         task_type="GPU" if gpu else "CPU",
         devices="0:1" if gpu else "",
         early_stopping_rounds=100,
-        verbose=100
+        ctr_target_border_count=10 ,
+        use_best_model=True,
+        verbose=False,
+        eval_metric='RMSE',
+        #verbose=100
     )
     model.fit(train_pool, eval_set=valid_pool)
     y_pred = model.predict(X_valid)
@@ -115,7 +119,7 @@ def train_catboost(X_train, y_train, X_valid, y_valid, num_rounds=10000, gpu=Fal
 def train_model(train_data, valid_data, target_col, features_col, dataset_name, model_type="catboost", num_rounds=10000):
     X_train, y_train, X_valid, y_valid = prepare_data(train_data, valid_data, target_col, features_col)
     model, rmse, r2 = try_gpu_or_cpu(model_type, X_train, y_train, X_valid, y_valid, num_rounds)
-    model_path = f"{dataset_name}_{model_type}_model.txt"
+    model_path = f"{dataset_name}_{model_type}_{str(num_rounds)}_model.txt"
     model.save_model(model_path) if model_type == "catboost" else model.save_model(model_path)
     return {"data": dataset_name, "RMSE": rmse, "R2": r2, "modelpath": model_path}
 
