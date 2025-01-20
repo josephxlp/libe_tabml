@@ -9,6 +9,30 @@ import xgboost as xgb
 import torch
 
 from utilsdf import remove_outlier
+import time
+
+def print_context(text):
+    print(' ')
+    """
+    Prints the given text in a styled format, mimicking SAGA GIS console output.
+
+    Parameters:
+        text (str): The text to print.
+    """
+    # Border symbols
+    border_char = "=" * 60
+    padding_char = " " * 4
+
+    # Print formatted text
+    print(border_char)
+    print(f"{padding_char}ML - Process Log")
+    print(border_char)
+
+    for line in text.split("\n"):
+        print(f"{padding_char}{line}")
+
+    print(border_char)
+
 
 def prepare_data(train_data, valid_data, target_col, features_col):
     """
@@ -29,7 +53,7 @@ def prepare_data(train_data, valid_data, target_col, features_col):
     y_valid = valid_data[target_col]
     return X_train, y_train, X_valid, y_valid
 
-def try_gpu_or_cpu(model_type, X_train, y_train, X_valid, y_valid, num_rounds=10000):
+def try_gpu_or_cpu(model_type, X_train, y_train, X_valid, y_valid, num_rounds=10000,seed=42):
     """
     Attempts to use GPU for training. Falls back to CPU if GPU is unavailable or fails.
 
@@ -48,21 +72,73 @@ def try_gpu_or_cpu(model_type, X_train, y_train, X_valid, y_valid, num_rounds=10
     """
     try:
         if model_type == "xgboost":
-            return train_xgboost(X_train, y_train, X_valid, y_valid, num_rounds, gpu=True)
+            return train_xgboost(X_train, y_train, X_valid, y_valid, num_rounds, seed,gpu=True)
         elif model_type == "lightgbm":
-            return train_lightgbm(X_train, y_train, X_valid, y_valid, num_rounds, gpu=True)
+            return train_lightgbm(X_train, y_train, X_valid, y_valid, num_rounds, seed,gpu=True)
         elif model_type == "catboost":
-            return train_catboost(X_train, y_train, X_valid, y_valid, num_rounds, gpu=True)
+            return train_catboost(X_train, y_train, X_valid, y_valid, num_rounds, seed,gpu=True)
     except Exception as e:
         print(f"GPU training failed for {model_type}: {e}. Falling back to CPU.")
         if model_type == "xgboost":
-            return train_xgboost(X_train, y_train, X_valid, y_valid, num_rounds, gpu=False)
+            return train_xgboost(X_train, y_train, X_valid, y_valid, num_rounds, seed,gpu=False)
         elif model_type == "lightgbm":
-            return train_lightgbm(X_train, y_train, X_valid, y_valid, num_rounds, gpu=False)
+            return train_lightgbm(X_train, y_train, X_valid, y_valid, num_rounds, seed,gpu=False)
         elif model_type == "catboost":
-            return train_catboost(X_train, y_train, X_valid, y_valid, num_rounds, gpu=False)
+            return train_catboost(X_train, y_train, X_valid, y_valid, num_rounds, seed,gpu=False)
+        
+def train_catboost(X_train, y_train, X_valid, y_valid, num_rounds=10000, seed=42, gpu=False):
+    train_pool = Pool(X_train, y_train)
+    valid_pool = Pool(X_valid, y_valid)
 
-# XGBoost training function
+    dynamic_early_stopping_rounds = max(100, num_rounds // 20) 
+    #dynamic_early_stopping_rounds = min(1000, max(100, num_rounds // 20))
+
+    dverbose = max(100, num_rounds // 20)
+
+    model = CatBoostRegressor(
+        iterations=num_rounds,
+        task_type="GPU" if gpu else "CPU",
+        devices="0:1" if gpu else "",
+        early_stopping_rounds=dynamic_early_stopping_rounds,
+        ##ctr_target_border_count=10, # what's this about?
+        use_best_model=True,
+        verbose=dverbose,  # Display progress every 100 iterations
+        eval_metric="RMSE",
+        random_seed=seed,
+    )
+    model.fit(train_pool, eval_set=valid_pool)
+    y_pred = model.predict(X_valid)
+    return model, np.sqrt(mean_squared_error(y_valid, y_pred)), r2_score(y_valid, y_pred)
+
+
+# Train and evaluate a model
+def train_model(train_data, valid_data, target_col, features_col, dataset_name, 
+                model_type="catboost", num_rounds=10000,seed=42):
+    X_train, y_train, X_valid, y_valid = prepare_data(train_data, valid_data, target_col, features_col)
+    model, rmse, r2 = try_gpu_or_cpu(model_type, X_train, y_train, X_valid, y_valid, num_rounds,seed)
+    model_path = f"{dataset_name}_{model_type}_{str(num_rounds)}_{seed}_model.txt"
+    model.save_model(model_path) if model_type == "catboost" else model.save_model(model_path)
+    return {"data": dataset_name, "RMSE": rmse, "R2": r2, "modelpath": model_path}
+
+# Compare training results across datasets
+def train_and_compare(df, target_col, features_col, model_type="catboost", num_rounds=10000):
+    train, valid = train_test_split(df, test_size=0.2, random_state=43)
+    d1 = remove_outlier(train, target_col, approach='zscore', threshold=3)
+    d2 = remove_outlier(train, target_col, approach='iqr')
+    d3 = remove_outlier(train, target_col, approach='percentile', lower_percentile=0.05, upper_percentile=0.95)
+    results = []
+    datasets = [("Original", train), ("Z-Score", d1), ("IQR", d2), ("Percentile", d3)]
+    for name, dataset in datasets:
+        result = train_model(dataset, valid, target_col, features_col, name, model_type, num_rounds)
+        results.append(result)
+    return pd.DataFrame(results)
+
+#############################################################################################
+#############################################################################################
+#############################################################################################
+#############################################################################################
+
+# XGBoost training function random_seed, init_params
 def train_xgboost(X_train, y_train, X_valid, y_valid, num_rounds=10000, gpu=False):
     dtrain = xgb.DMatrix(X_train, label=y_train)
     dvalid = xgb.DMatrix(X_valid, label=y_valid)
@@ -95,46 +171,9 @@ def train_lightgbm(X_train, y_train, X_valid, y_valid, num_rounds=10000, gpu=Fal
     y_pred = model.predict(X_valid)
     return model, np.sqrt(mean_squared_error(y_valid, y_pred)), r2_score(y_valid, y_pred)
 
-# CatBoost training function
-def train_catboost(X_train, y_train, X_valid, y_valid, num_rounds=10000, gpu=False):
-    train_pool = Pool(X_train, y_train)
-    valid_pool = Pool(X_valid, y_valid)
 
-    model = CatBoostRegressor(
-        iterations=num_rounds,
-        task_type="GPU" if gpu else "CPU",
-        devices="0:1" if gpu else "",
-        early_stopping_rounds=100,
-        ctr_target_border_count=10 ,
-        use_best_model=True,
-        verbose=False,
-        eval_metric='RMSE',
-        #verbose=100
-    )
-    model.fit(train_pool, eval_set=valid_pool)
-    y_pred = model.predict(X_valid)
-    return model, np.sqrt(mean_squared_error(y_valid, y_pred)), r2_score(y_valid, y_pred)
 
-# Train and evaluate a model
-def train_model(train_data, valid_data, target_col, features_col, dataset_name, model_type="catboost", num_rounds=10000):
-    X_train, y_train, X_valid, y_valid = prepare_data(train_data, valid_data, target_col, features_col)
-    model, rmse, r2 = try_gpu_or_cpu(model_type, X_train, y_train, X_valid, y_valid, num_rounds)
-    model_path = f"{dataset_name}_{model_type}_{str(num_rounds)}_model.txt"
-    model.save_model(model_path) if model_type == "catboost" else model.save_model(model_path)
-    return {"data": dataset_name, "RMSE": rmse, "R2": r2, "modelpath": model_path}
 
-# Compare training results across datasets
-def train_and_compare(df, target_col, features_col, model_type="catboost", num_rounds=10000):
-    train, valid = train_test_split(df, test_size=0.2, random_state=43)
-    d1 = remove_outlier(train, target_col, approach='zscore', threshold=3)
-    d2 = remove_outlier(train, target_col, approach='iqr')
-    d3 = remove_outlier(train, target_col, approach='percentile', lower_percentile=0.05, upper_percentile=0.95)
-    results = []
-    datasets = [("Original", train), ("Z-Score", d1), ("IQR", d2), ("Percentile", d3)]
-    for name, dataset in datasets:
-        result = train_model(dataset, valid, target_col, features_col, name, model_type, num_rounds)
-        results.append(result)
-    return pd.DataFrame(results)
 
 # Example Usage
 # features_col = [col for col in df.columns if col != "target"]
