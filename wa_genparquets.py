@@ -6,9 +6,7 @@ from utilsdf import tile_files_to_parquet_parallel
 import time 
 
 
-
 # 90:1, 30:1 12:1
-
 #X=30 
 #X=12
 X=90
