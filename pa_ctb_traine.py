@@ -158,7 +158,8 @@ def full_pipeline(model_type="catboost", num_rounds=100, X=90, yvar="zdif", tcol
 #num_rounds_list = [1000,2000,5000,7000, 9000, 10_000,20_000,30_000,50_000,100_000] # 90m 10 models ensemble 
 # can you do zdiff in parquets so save time and all preprocessing too?
 num_rounds_list = [1000,2000,5000,10_000,20_000,50_000] # 90: 46.29 minutes for all of them 
-num_rounds_list = [1000,2000,5000,10_000,20_000,50_000] # 30:
+num_rounds_list = [1000,2000,5000,10_000,20_000,50_000] # 30:5h
+num_rounds_list = [1000,2000,5000]#10_000,20_000,50_000]
 Lnum_rounds_list = len(num_rounds_list)
 if __name__  == "__main__":
 
@@ -171,12 +172,12 @@ if __name__  == "__main__":
         full_pipeline,
         model_type="catboost",
         num_rounds=num_rounds,
-        X=30,
+        X=12,
         yvar="zdif",
         tcol="edem",
         seedlist=[21, 43, 13])
 
     print_context("THE END")
-
+    # need to reset the folder for each num_rounds ::: too wrong output right now 
     # SEND NOTIFICATION - FIND THE CODE []
 
