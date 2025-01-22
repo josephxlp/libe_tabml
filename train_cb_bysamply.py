@@ -264,9 +264,9 @@ fcol = ['egm08', 'egm96', 'tdem_hem',
 
 #N = 10_000
 ##X= 90 #d:1000:1 5000:1 10000:1#20000:
-X = 30 #d:1000:1 5000: 10000:
+X = 30 #d:1000:1 5000:1 10000:
 ##X= 12 #d:1000: 5000: 10000:
-num_rounds = 5000 
+num_rounds = 10000 
 #-------------------------------------------------------------#
 model_type="catboost"
 outdir = MODEL_REPO_DPATH
@@ -301,12 +301,21 @@ if __name__ == '__main__':
         m = multipliers[i]
         print_context(f'Processing {N} samples\nEquivalent to {m}x TILE')
         #[] add the other wrapper here 
-        full_pipeline(outdir=outdir,
-                          model_type=model_type, 
-                          num_rounds=num_rounds, 
-                          X=X, 
-                          N=N,
-                          m=m)
+
+        measure_time_beautifully("Full Model Training Pipeline",
+                                 full_pipeline,
+                                 outdir=outdir,
+                                 model_type=model_type, 
+                                 num_rounds=num_rounds, 
+                                 X=X, 
+                                 N=N,
+                                m=m)
+        # full_pipeline(outdir=outdir,
+        #                   model_type=model_type, 
+        #                   num_rounds=num_rounds, 
+        #                   X=X, 
+        #                   N=N,
+        #                   m=m)
 
         # try:
         #     full_pipeline(outdir=outdir,
