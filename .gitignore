@@ -1,8 +1,12 @@
 __pycache__
 upaths.py 
 vars.py 
+uvars.py 
 anfo 
 catboost_info 
 AutogluonModels/*
+autogluon_predictor/*
+output
+
 
 
