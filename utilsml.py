@@ -1,4 +1,4 @@
-
+import os 
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -111,11 +111,47 @@ def train_catboost(X_train, y_train, X_valid, y_valid, num_rounds=10000, seed=42
     return model, np.sqrt(mean_squared_error(y_valid, y_pred)), r2_score(y_valid, y_pred)
 
 
+def train_model(train_data, valid_data, target_col, features_col, output_dir, 
+                model_type="catboost", num_rounds=10000, seed=42):
+    # Prepare the data for training
+    X_train, y_train, X_valid, y_valid = prepare_data(train_data, valid_data, target_col, features_col)
+    
+    # Train the model and calculate metrics
+    model, rmse, r2 = try_gpu_or_cpu(model_type, X_train, y_train, X_valid, y_valid, num_rounds, seed)
+
+    # Define paths for model and error metrics
+    model_path = os.path.join(output_dir, f"{model_type}_{num_rounds}_{seed}_model.txt")
+    error_path = os.path.join(output_dir, f"{model_type}_{num_rounds}_{seed}_metrics.csv")
+
+    # Save the model
+    if model_type == "catboost":
+        model.save_model(model_path)
+    else:
+        model.save_model(model_path)
+
+    # Create a DataFrame for error metrics and save as CSV
+    metrics_df = pd.DataFrame([{"Seed": seed, "RMSE": rmse, "R2": r2, "ModelPath": model_path}])
+    metrics_df.to_csv(error_path, index=False)
+    
+    return {
+        "Seed": seed,
+        "RMSE": rmse,
+        "R2": r2,
+        "ModelPath": model_path
+    }
+
+
+
+
+
+
+
 # Train and evaluate a model
-def train_model(train_data, valid_data, target_col, features_col, dataset_name, 
+def train_modelc(train_data, valid_data, target_col, features_col, dataset_name, 
                 model_type="catboost", num_rounds=10000,seed=42):
     X_train, y_train, X_valid, y_valid = prepare_data(train_data, valid_data, target_col, features_col)
     model, rmse, r2 = try_gpu_or_cpu(model_type, X_train, y_train, X_valid, y_valid, num_rounds,seed)
+    
     model_path = f"{dataset_name}_{model_type}_{str(num_rounds)}_{seed}_model.txt"
     model.save_model(model_path) if model_type == "catboost" else model.save_model(model_path)
     return {"data": dataset_name, "RMSE": rmse, "R2": r2, "modelpath": model_path}
@@ -129,7 +165,7 @@ def train_and_compare(df, target_col, features_col, model_type="catboost", num_r
     results = []
     datasets = [("Original", train), ("Z-Score", d1), ("IQR", d2), ("Percentile", d3)]
     for name, dataset in datasets:
-        result = train_model(dataset, valid, target_col, features_col, name, model_type, num_rounds)
+        result = train_modelc(dataset, valid, target_col, features_col, name, model_type, num_rounds)
         results.append(result)
     return pd.DataFrame(results)
 

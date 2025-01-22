@@ -1,141 +1,100 @@
-
 import os
-import rasterio
-import pandas as pd
-import numpy as np
 from glob import glob
+import pandas as pd
+import numpy as np 
+import rasterio
 from concurrent.futures import ThreadPoolExecutor
 from scipy.stats import zscore
 
-def get_tile_names(tile_files, tilename,X):
-    tile_names = [os.path.basename(i).replace('.tif', '') for i in tile_files]
-    tile_names = [i.replace(f'_{X}','') for i in tile_names]
-    tile_names = [i.replace(f'{tilename}_','').lower() for i in tile_names]
+def get_tile_names(tile_files, tilename, X):
+    """
+    Extracts and cleans tile names from file paths.
+    """
+    tile_names = [os.path.basename(f).replace('.tif', '') for f in tile_files]
+    tile_names = [name.replace(f'{tilename}_', '').lower() for name in tile_names]
+    #tile_names = [name.replace(f'_{X}', '').replace(f'{tilename}_', '').lower() for name in tile_names]
     return tile_names
 
 def get_tile_files(DPATH, X, tilename):
+    """
+    Retrieves tile files and the corresponding parquet file path.
+    """
     TILESX = f"{DPATH}{X}"
     tile_dpath = f'{TILESX}/{tilename}'
     fparquet = f'{tile_dpath}/{tilename}_byldem.parquet'
     tile_files = glob(f'{tile_dpath}/*.tif')
     return tile_files, fparquet
 
-
 def list_files_by_tilenames(RES_DPATH, X, tilenames):
-    fparquet_list =  []
-    tile_files_list = []
+    """
+    Lists parquet and tile files for multiple tiles.
+    """
+    fparquet_list, tile_files_list = [], []
     for tilename in tilenames:
         tile_files, fparquet = get_tile_files(RES_DPATH, X, tilename)
         fparquet_list.append(fparquet)
         tile_files_list.append(tile_files)
-
-    return fparquet_list,tile_files_list
+    return fparquet_list, tile_files_list
 
 def filter_files_by_endingwith(files, var_ending):
-    filtered_files = []
-    for ending in var_ending:
-        matched_files = [f for f in files if f.endswith(ending)]
-        #filtered_files.append(matched_files)
-        filtered_files.extend(matched_files)
+    """
+    Filters raster files by specified endings.
+    """
+    filtered_files = [f for ending in var_ending for f in files if f.endswith(ending)]
     print(f"Filtered files count: {len(filtered_files)}/{len(files)}")
     return filtered_files
 
-def pathlist2df(vpaths, vnames):
-    """
-    Reads raster files from a list of paths into a single DataFrame, where each file (or band) is a column.
-    Handles NoData values by replacing them with np.nan.
-
-    Parameters:
-        vpaths (list): List of file paths to raster datasets.
-        vnames (list): List of names to use for the columns in the DataFrame. Must match the number of rasters.
-
-    Returns:
-        pd.DataFrame: DataFrame where each column corresponds to a raster or band from the input list.
-    """
-    if len(vpaths) != len(vnames):
-        raise ValueError("The length of vpaths and vnames must be the same.")
-
-    data_dict = {}  # To hold the raster data
-    for path, vname in zip(vpaths, vnames):
-        with rasterio.open(path) as src:
-            #meta = src.meta
-            nodata = src.nodata  # Get NoData value
-            raster_data = src.read()  # Read all bands
-            nbands = src.count
-
-            if nbands > 1:  # Multiband raster
-                for band_idx in range(raster_data.shape[0]):
-                    column_name = f"{vname}_band{band_idx + 1}"  # Add band suffix
-                    band_data = raster_data[band_idx].flatten()  # Flatten the 2D array into 1D
-                    band_data = np.where(band_data == nodata, np.nan, band_data)  # Replace NoData with np.nan
-                    data_dict[column_name] = band_data
-            else:  # Single-band raster
-                column_name = vname  # Use vname directly
-                raster_data = raster_data.flatten()
-                raster_data = np.where(raster_data == nodata, np.nan, raster_data)
-                data_dict[column_name] = raster_data
-
-    # Convert to DataFrame
-    df = pd.DataFrame(data_dict)
-    df = df.astype(np.float32)
-
+def read_raster(file_path, file_name):
+    
+    df = pd.DataFrame()
+    with rasterio.open(file_path) as src:
+        count = src.count
+        #print(f"Number of bands: {count}")
+        
+        if count == 1:
+            df[f'{file_name}'] = src.read(1,masked=True).flatten()
+        elif count > 1:
+            for i in range(1, count + 1):  # Use 1-based indexing for raster bands
+                df[f'{file_name}_band{i}'] = src.read(i,masked=True).flatten()
+    
     return df
 
+def pathlist2df(tile_files, tile_names):
 
+    dflist = []
+    for filepath,filename in zip(tile_files,tile_names):
+        df = read_raster(filepath,filename)
+        dflist.append(df)
+    da = pd.concat(dflist,axis=1)
+    return da 
 
-def tile_files_to_parquet(DPATH, X, tilename, vending_all):#, nending_all, ftnames): 
+def tile_files_to_parquet(DPATH, X, tilename, vending_all):
     """
-    Reads raster files matching the given endings, converts them to a DataFrame, and saves them to a parquet file.
-    If the parquet file already exists, it is simply returned.
-
-    Parameters:
-        DPATH (str): Base directory path.
-        X (str): Subdirectory name.
-        tilename (str): Tile name for file identification.
-        vending_all (list): List of file endings to filter input raster files.
-        nending_all (list): Names corresponding to the filtered raster files.
-        ftnames (list): Column names for the DataFrame.
-
-    Returns:
-        pd.DataFrame: DataFrame containing raster data.
-        str: Path to the parquet file.
+    Processes raster files for a tile and saves them to a parquet file.
     """
-    # Get tile files and parquet path
     tile_files, fparquet = get_tile_files(DPATH, X, tilename)
-
-    # Filter raster files by endings
     tile_files = filter_files_by_endingwith(tile_files, vending_all)
 
-    tile_names = get_tile_names(tile_files, tilename,X) ### bneck 
+    if not tile_files:
+        raise ValueError(f"No matching raster files found for {tilename}")
 
-    # Check if parquet file already exists
+    tile_names = get_tile_names(tile_files, tilename, X)
+
     if os.path.isfile(fparquet):
         print(f"Parquet file already exists: {fparquet}")
-        #df = pd.read_parquet(fparquet)  # Read the existing parquet file
-        df = None 
-    else:
-        if not tile_files:
-            raise ValueError(f"No matching raster files found in: {tile_files}")
-        
-        # Create DataFrame from raster files
-        df = pathlist2df(tile_files, tile_names)
-        if X == 90:
-            assert len(df) == 1200*1200, ' Grid shape and df length does not match'
-        
-        elif X == 30:
-            assert len(df) == 3600*3600, ' Grid shape and df length does not match'
-        
-        elif X == 12:
-            assert len(df) == 9001*9001, ' Grid shape and df length does not match'
+        return None, fparquet
 
-        else:
-            print(f'X = {X} not available')
+    df = pathlist2df(tile_files, tile_names)
 
-        
-        #df.columns = ftnames
-        df.to_parquet(fparquet)
-        print(f"Parquet file created: {fparquet}")
+    if X == 90:
+        assert len(df) == 1200 * 1200, 'Grid shape and df length does not match'
+    elif X == 30:
+        assert len(df) == 3600 * 3600, 'Grid shape and df length does not match'
+    elif X == 12:
+        assert len(df) == 9001 * 9001, 'Grid shape and df length does not match'
 
+    df.to_parquet(fparquet)
+    print(f"Parquet file created: {fparquet}")
     return df, fparquet
 
 
@@ -184,7 +143,8 @@ def tile_files_to_parquet_parallel(tilenames, RES_DPATH, X, vending_all):#, nend
     return dflist, fparquet_list
 
 
-#####################################################################
+
+####################################################################
 #####################################################################
 #####################################################################
 
