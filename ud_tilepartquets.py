@@ -300,8 +300,94 @@ def check_fillnulls(df):
             continue
     
     return df
+#============================================================
+
+def encode_nulls_bycol(df, col, lval, hval):
+    """
+    Replace invalid or out-of-range values in a specified column of a DataFrame with np.nan.
+
+    Parameters:
+        df (pandas.DataFrame): The input DataFrame.
+        col (str): The name of the column to process.
+        lval (float): The lower bound of acceptable values.
+        hval (float): The upper bound of acceptable values.
+
+    Returns:
+        pandas.DataFrame: A modified DataFrame with invalid values replaced by np.nan.
+    """
+    # Replace -9999 and -9999.0 with np.nan
+    df[col] = df[col].replace([-9999, -9999.0], np.nan)
+    
+    # Replace values less than lval or greater than hval with np.nan
+    df.loc[(df[col] < lval) | (df[col] > hval), col] = np.nan
+    
+    return df
+
+def read_tiles_bysample(fparquet_list, tcol, rcol, N):
+    """
+    Processes a list of parquet files by encoding nulls, dropping rows with nulls,
+    sampling rows, and concatenating the results.
+
+    Parameters:
+        fparquet_list (list of str): List of file paths to parquet files.
+        tcol (str): Target column to process for null encoding and dropping.
+        rcol (str): Reference column to process for null encoding and dropping.
+        N (int): Number of rows to sample from each file.
+
+    Returns:
+        pd.DataFrame: A concatenated DataFrame of processed samples.
+    """
+    dflist = []
+    for fparquet in fparquet_list:
+        try:
+            # Read parquet file
+            df = pd.read_parquet(fparquet)
+            print(f"Processing file: {os.path.basename(fparquet)}")
+            
+            # Encode nulls
+            print(f"Encoding nulls from column {tcol}...")
+            encode_nulls_bycol(df, col=tcol, lval=-40, hval=1000)
+            print(f"Encoding nulls from column {rcol}...")
+            encode_nulls_bycol(df, col=rcol, lval=-40, hval=1000)
+            
+            # Drop nulls
+            print(f"Dropping nulls from column '{tcol}'...")
+            df = dropnulls_bycol(df, col=tcol)
+            print(f"Dropping nulls from column '{rcol}'...")
+            df = dropnulls_bycol(df, col=rcol)
+            
+            # Sampling
+            print(f"Sampling from {os.path.basename(fparquet)}...")
+            L = len(df)
+            if L < N:
+                print(f"Warning: Requested sample size {N} exceeds available rows {L}. Sampling all rows instead.")
+                #df = df.sample(L)
+                df = df.sample(frac=1)
+            else:
+                df = df.sample(N)
+            
+            # Append to list
+            if not df.empty:
+                dflist.append(df)
+            else:
+                print(f"Warning: DataFrame from {os.path.basename(fparquet)} is empty after filtering.")
+        
+        except Exception as e:
+            print(f"Error processing file {fparquet}: {e}")
+
+    # Concatenate
+    if dflist:
+        df = pd.concat(dflist, ignore_index=True)
+        df = check_fillnulls(df)
+        print("Final DataFrame columns:", df.columns)
+        return df
+    else:
+        print("Warning: No valid DataFrames to concatenate. Check input files or filtering logic.")
+        return pd.DataFrame()  # Return an empty DataFrame if no valid data was processed
 
 
-
-
+def estimate_nsamples(target_samples=81_000_000, num_tiles=6, multipliers=[0.2, 0.3, 0.5, 0.8, 1, 2, 3]):
+    samples_per_tile = target_samples // num_tiles
+    nsamples = [int(samples_per_tile * multiplier) for multiplier in multipliers]
+    return nsamples
 
