@@ -172,7 +172,7 @@ def train_modelc(train_data, valid_data, target_col, features_col, dataset_name,
 
 # Compare training results across datasets
 def train_and_compare(df, target_col, features_col, model_type="catboost", num_rounds=10000):
-    train, valid = train_test_split(df, test_size=0.2, random_state=43)
+    train, valid = train_test_split(df, test_size=0.1, random_state=43)
     d1 = remove_outlier(train, target_col, approach='zscore', threshold=3)
     d2 = remove_outlier(train, target_col, approach='iqr')
     d3 = remove_outlier(train, target_col, approach='percentile', lower_percentile=0.05, upper_percentile=0.95)
