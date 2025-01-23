@@ -36,6 +36,8 @@ https://auto.gluon.ai/stable/tutorials/tabular/how-it-works.html
 https://github.com/autogluon/autogluon/tree/master/examples/tabular/interpret
 https://www.kaggle.com/competitions/playground-series-s4e9/discussion/537052
 https://www.kaggle.com/competitions/playground-series-s4e9/discussion/537052
+https://github.com/autogluon/autogluon/tree/master/examples/automm
+
 
 https://auto.gluon.ai/stable/tutorials/tabular/advanced/index.html
 - For standard datasets that are represented as tables (stored as CSV file, parquet from database, etc.), AutoGluon can produce models to predict the values in one column based on the values in the other columns
