@@ -85,12 +85,30 @@ def try_gpu_or_cpu(model_type, X_train, y_train, X_valid, y_valid, num_rounds=10
             return train_lightgbm(X_train, y_train, X_valid, y_valid, num_rounds, seed,gpu=False)
         elif model_type == "catboost":
             return train_catboost(X_train, y_train, X_valid, y_valid, num_rounds, seed,gpu=False)
-        
+
+def get_dynamic_early_stopping_rounds(num_rounds):
+    """
+    Calculate dynamic early stopping rounds based on the total number of iterations (num_rounds).
+    - Scales proportionally for larger num_rounds (> 1000).
+    - Ensures minimum threshold for smaller num_rounds.
+    """
+    if num_rounds > 1000:
+        # Reduce early stopping rounds for very large iterations
+        return max(50, int(num_rounds * 0.05))  # 5% of num_rounds, but not less than 50
+    elif num_rounds < 500:
+        # Scale proportionally for smaller num_rounds
+        return max(20, int(num_rounds * 0.1))  # 10% of num_rounds, but not less than 20
+    else:
+        # Default scaling
+        return max(100, int(num_rounds * 0.1))  # 10% of num_rounds
+    
+
 def train_catboost(X_train, y_train, X_valid, y_valid, num_rounds=10000, seed=42, gpu=False):
     train_pool = Pool(X_train, y_train)
     valid_pool = Pool(X_valid, y_valid)
 
-    dynamic_early_stopping_rounds = max(100, num_rounds // 20) 
+    #dynamic_early_stopping_rounds = max(100, num_rounds // 20) 
+    dynamic_early_stopping_rounds = get_dynamic_early_stopping_rounds(num_rounds)
     #dynamic_early_stopping_rounds = min(1000, max(100, num_rounds // 20))
 
     dverbose = max(100, num_rounds // 20)
@@ -139,10 +157,6 @@ def train_model(train_data, valid_data, target_col, features_col, output_dir,
         "R2": r2,
         "ModelPath": model_path
     }
-
-
-
-
 
 
 

@@ -286,21 +286,27 @@ seedlist = [10,21]#,13,22,43] # goal is to do 10 ensemble
 model_type="catboost"
 outdir = MODEL_REPO_DPATH
 N = None # to load the all dataset , if value, will sample N rows , eg. N=12, 12rows 
-
-
+num_rounds_list = [1000,2000,5000]
+Lnum_rounds_list = len(num_rounds_list)
 if __name__ == "__main__":
     if N is None:
         m = 'all'
+    else:
+        m = 'mul'#'get_the_code_from_the_train_cb_byn'
+    for i,num_rounds in enumerate(num_rounds_list):
+        textb = f'{i}/{Lnum_rounds_list} @{num_rounds} num_rounds'
+        print_context(textb)
 
-    measure_time_beautifully("Full Model Training Pipeline",
-                                    full_pipeline,
-                                    outdir=outdir,
-                                    model_type=model_type, 
-                                    num_rounds=num_rounds, 
-                                    X=X, 
-                                    N=None,
-                                    m=m,
-                                    )
+
+        measure_time_beautifully("Full Model Training Pipeline",
+                                full_pipeline,
+                                outdir=outdir,
+                                model_type=model_type, 
+                                num_rounds=num_rounds, 
+                                X=X, 
+                                N=N,
+                                m=m,
+                                )
 
 
 
