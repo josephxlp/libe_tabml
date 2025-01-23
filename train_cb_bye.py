@@ -281,12 +281,13 @@ fcol = ['egm08', 'egm96', 'tdem_hem',
 #X = 30 #d:1000:1 5000:1 10000:1
 X = 12 #d:1000:1 5000:1 10000:1
 num_rounds = 1000#10_000 
-seedlist = [10,21]#,13,22,43] # goal is to do 10 ensemble 
+seedlist = [13,16,21,42,43,
+            53,66,73,82,93] # goal is to do 10 ensemble 
 #-------------------------------------------------------------#
 model_type="catboost"
 outdir = MODEL_REPO_DPATH
 N = None # to load the all dataset , if value, will sample N rows , eg. N=12, 12rows 
-num_rounds_list = [1000,2000,5000]
+num_rounds_list = [2000,5000,10_000]
 Lnum_rounds_list = len(num_rounds_list)
 if __name__ == "__main__":
     if N is None:
