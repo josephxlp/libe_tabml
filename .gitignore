@@ -7,6 +7,14 @@ catboost_info
 AutogluonModels/*
 autogluon_predictor/*
 output
+*paths.py
+
+
+
+
+
+
+
 
 
 
