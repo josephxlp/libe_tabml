@@ -264,15 +264,16 @@ fcol = ['egm08', 'egm96', 'tdem_hem',
 
 #N = 10_000
 ##X= 90 #d:1000:1 5000:1 10000:1#20000:
-X = 30 #d:1000:1 5000:1 10000:
-##X= 12 #d:1000: 5000: 10000:
-num_rounds = 10000 
+#X = 30 #d:1000:1 5000:1 10000:1
+X= 12 #d:1000:1 5000:1 10000:1
+num_rounds = 20_000 
 #-------------------------------------------------------------#
 model_type="catboost"
 outdir = MODEL_REPO_DPATH
 num_tiles=6
 if X == 12:
-    multipliers=[0.1, 0.2, 0.3, 0.5, 0.8, 1, 2, 3,6]
+    #multipliers=[0.1, 0.2, 0.3, 0.5, 0.8, 1, 2, 3,6]
+    multipliers=[0.1, 0.3, 0.5, 1, 2, 3,6]
     target_samples=9000*9000 #9001
     
     Nsamples = estimate_nsamples(target_samples, num_tiles, multipliers)
