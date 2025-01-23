@@ -177,11 +177,11 @@ start_time = time.perf_counter()
 # Example usage:
 X = 12 #90 
 num_tiles = 6
-minutes = 60#2
-hours = 1
+minutes = 1#60#2
+hours = 4
 time_limit_add = 900 # 15 mins 
 outdir = MODEL_REPO_DPATH
-presets = "medium_quality"#good_quality
+presets = "best_quality"#good_quality:medium_quality
 yvar = "zdif"
 tcol = 'edem_w84'
 rcol = 'multi_dtm_lidar'
