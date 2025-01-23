@@ -1,0 +1,68 @@
+(_dystack pid=1064379) 	Inferring data type of each feature based on column values. Set feature_metadata_in to manually specify special dtypes of the features.
+h
+
+https://auto.gluon.ai/stable/tutorials/tabular/how-it-works.html#id6
+- how ti workds
+https://auto.gluon.ai/stable/tutorials/multimodal/index.html
+- other applications 
+
+# ## need to add test data: train 90%,valid 6% and testing 4%
+- all over the place 
+
+
+ttps://auto.gluon.ai/stable/tutorials/tabular/tabular-faq.html
+https://auto.gluon.ai/stable/api/autogluon.tabular.models.html
+
+
+https://auto.gluon.ai/stable/tutorials/tabular/tabular-indepth.html
+- predictor.model_names()
+-predictor.feature_importance(test_data) #also with guide how to interpret the features
+presets = ['good_quality', 'optimize_for_deployment']
+predictor_light = TabularPredictor(label=label, eval_metric=metric).fit(train_data, presets=presets, time_limit=30) 
+
+excluded_model_types = ['KNN', 'NN_TORCH']
+predictor_light = TabularPredictor(label=label, eval_metric=metric).fit(train_data, excluded_model_types=excluded_model_types, time_limit=30)
+
+-- base on perfomance of 90m models, which models are always topping 
+- If you encounter memory issues
+- If you encounter disk space issues : do you have code  example of this: run ti through llm first!
+
+email them or github - always running out of memory, is there a way to estimate time give  my df, get all the machine info and give me a enstimate under different presents 
+# if you use time_limit of X, this option will run and others will run out og time, for example 
+https://auto.gluon.ai/stable/tutorials/tabular/how-it-works.html
+- What Models To Use
+
+---- study
+https://github.com/autogluon/autogluon/tree/master/examples/tabular/interpret
+https://www.kaggle.com/competitions/playground-series-s4e9/discussion/537052
+https://www.kaggle.com/competitions/playground-series-s4e9/discussion/537052
+
+https://auto.gluon.ai/stable/tutorials/tabular/advanced/index.html
+- For standard datasets that are represented as tables (stored as CSV file, parquet from database, etc.), AutoGluon can produce models to predict the values in one column based on the values in the other columns
+
+https://auto.gluon.ai/stable/tutorials/tabular/advanced/tabular-multilabel.html
+- run both classification and regression at the same time 
+
+https://auto.gluon.ai/stable/tutorials/tabular/advanced/tabular-gpu.html
+- use gpu 
+https://github.com/autogluon/autogluon-workshops/tree/main/2024-reinvent/tabular
+- indepth tab tutorial 2024 
+https://auto.gluon.ai/stable/tutorials/multimodal/index.html
+- foundation models 
+- https://auto.gluon.ai/stable/tutorials/multimodal/multimodal_prediction/multimodal_text_tabular.html [regression]
+- https://auto.gluon.ai/stable/tutorials/multimodal/image_prediction/beginner_image_cls.html
+- https://auto.gluon.ai/stable/tutorials/multimodal/image_prediction/clip_zeroshot.html
+- https://auto.gluon.ai/stable/tutorials/multimodal/image_segmentation/beginner_semantic_seg.html
+
+https://auto.gluon.ai/stable/tutorials/cloud_fit_deploy/cloud-aws-lambda-deployment.html
+- cloud and apply for the grant 300 from ISDAI 
+- https://auto.gluon.ai/cloud/stable/tutorials/autogluon-cloud.html
+- find youtube on this set up or githum/ email them on it 
+
+-- why transform the y here : does it help the model :: do it also 
+- other problems as well like object detection : find a dataset to play with - releant to EO science or insurance 
+https://github.com/autogluon/autogluon-workshops/tree/main/2024-reinvent
+- on cloud 
+https://auto.gluon.ai/stable/install.html
+- using it with cloud 
+
