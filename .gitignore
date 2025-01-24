@@ -8,6 +8,8 @@ AutogluonModels/*
 autogluon_predictor/*
 output
 *paths.py
+*vars.py 
+
 
 
 
