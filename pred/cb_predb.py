@@ -30,7 +30,10 @@ def main():
     #modelpath = 'path/to/model'
     #outdir = 'path/to/output'
     modelpath = "/media/ljp238/12TBWolf/RSPROX/OUTPUT_TILES/MODELS/train_cb_bysample/12/zdif/iter10000_n81000000_eq6xtile/catboost_10000_42_model.txt"
-    outdir = "/media/ljp238/12TBWolf/RSPROX/OUTPUT_TILES/PREDICTIONS/TESTING/"
+    modelpath = "/media/ljp238/12TBWolf/RSPROX/OUTPUT_TILES/MODELS/train_cb_bysample/12/zdif/iter10000_n236435487_eqallxtile/catboost_10000_43_model.txt"
+    dirname = "iter10000_n236435487_eqallxtile"
+    outdir = f"/media/ljp238/12TBWolf/RSPROX/OUTPUT_TILES/PREDICTIONS/TESTING/{dirname}"
+    os.makedirs(outdir, exist_ok=True)
 
     fparquet_list, tile_files_list = get_parquets_and_geotifs_by_tile(RES_DPATH, X, tilenames, vending_all)
 

@@ -29,7 +29,8 @@ def main():
     ps = 9001
     tilenames = tilenames_mkd + tilenames_tls + tilenames_rgn # + tilenames_lidar
     bsize = 512
-    dirname = "tlimit120_good_quality"
+   # dirname = "tlimit120_good_quality"
+    dirname = "tlimit1020_good_quality"
     modelpath = f"{ag_models_dpath}/{str(X)}/{yvar}/{dirname}"
         
 
