@@ -136,8 +136,3 @@ if __name__ == "__main__":
             config
         )
 
-# git hub all this folder 
-# make predictions with ensemble cb 
-# check ag models to make predictions 
-# do errors at home @leave at 8 to cook, finish othertasks, and pray say to him i am alone,and have no one to call, some one in my corner
-# also do Rolf's stuff 
