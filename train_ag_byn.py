@@ -142,17 +142,21 @@ def evaluate_and_save(predictor, valid_data, label, out_dpath):
     logging.info(f"Evaluation results saved to {evaluation_results_path}")
 
 # Main function to execute the entire workflow
-def run_workflow(X, time_limit, outdir, presets, yvar, tcol, rcol, fcol, tilenames_lidar, N):
+def run_workflow(X, time_limit, outdir, presets, yvar, tcol, rcol, fcol, tilenames_lidar, N,m):
     logging.info("# Step 0: Instantiating the Workflow...")
     label = yvar
     labelfcol = [label] + fcol
+
+    if m is not None:
+        m = str(m).replace('.', 'p')
+        mN = f'eq{m}xtile'
 
     logging.info('# Step 1: List files by tilenames')
     fparquet_list, tile_files_list = list_files_by_tilenames(RES_DPATH, X, tilenames_lidar)
     logging.info(f"Found {len(fparquet_list)} parquet files and {len(tile_files_list)} tile files.")
     pprint(fparquet_list)
 
-    out_dpath = f'{outdir}/autogluon_study/{X}/{yvar}/tlimit{str(time_limit)}_{presets}_{str(N)}'
+    out_dpath = f'{outdir}/autogluon_study/{X}/{yvar}/{presets}/tlimit{str(time_limit)}_{str(N)}_{mN}'
     os.makedirs(out_dpath, exist_ok=True)
     logging.info(f"Output directory created or already exists: {out_dpath}")
 
@@ -178,10 +182,10 @@ start_time = time.perf_counter()
 X = 12 #90 
 num_tiles = 6
 minutes = 1#60#2
-hours = 4
+hours = 8# 4
 time_limit_add = 900 # 15 mins 
 outdir = MODEL_REPO_DPATH
-presets = "best_quality"#good_quality:medium_quality
+presets = "medium_quality" #high_quality:1#good_quality:1#medium_quality:#best_quality:
 yvar = "zdif"
 tcol = 'edem_w84'
 rcol = 'multi_dtm_lidar'
@@ -194,12 +198,15 @@ task_description +=f'GRID:{X}\nTime:{hours}h{minutes}min\nMode:{presets}'
 time_limit = set_time_limit(minutes, hours)
 
 # Get multipliers and Nsamples outside the main workflow
+# [0.1,0.5, 1, 3, 5, 6,10,15
 multipliers, Nsamples = get_multipliers_and_samples(
-    X, num_tiles,[10]) # 0.001,0.01,0.1 #6
+    X, num_tiles,[1, 3, 5,8,10]) 
 
 if Nsamples is None:
     exit()
 
+## exclude some models ???
+#### vovrt this into GPU, but first make sure loading big ones working just fine []???????
 #N = Nsamples[0]
 # 67500000
 #add sample size tlimitandpresent not enough , add multiplies to the name
@@ -210,6 +217,7 @@ print(Nsamples)
 #multipliers, Nsamples = [],[67500000]
 #Logging the parameters for each attempt
 for i, N in enumerate(Nsamples):
+    m = multipliers[i]
     print(f'{multipliers[i]}xtile @{N} samples')
 #     if i > 0:
 #         break
@@ -217,14 +225,14 @@ for i, N in enumerate(Nsamples):
 
     try: 
         run_workflow(X, time_limit, outdir, presets, 
-              yvar, tcol, rcol, fcol, tilenames_lidar, N)
+              yvar, tcol, rcol, fcol, tilenames_lidar, N,m)
         logging.info("First attempt successful.")
     except Exception as e:
         logging.error(f"First attempt failed: {e}")
         try:
             time_limit = time_limit + time_limit_add # 15 minutes
             run_workflow(X, time_limit, outdir, presets, 
-                         yvar, tcol, rcol, fcol, tilenames_lidar, N)
+                         yvar, tcol, rcol, fcol, tilenames_lidar, N,m)
             logging.info("Second attempt successful.")
         except Exception as e:
             logging.error(f"Second attempt failed: {e}")
@@ -257,3 +265,4 @@ print(f"{padding_char * 2}{elapsed_days:.2f} days")
 print(border_char)
 # make this into a text file , in addition to pritnint it 
 # send me a notification on desktop , and send email 
+print(Nsamples)

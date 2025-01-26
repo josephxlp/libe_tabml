@@ -128,6 +128,19 @@ def train_catboost(X_train, y_train, X_valid, y_valid, num_rounds=10000, seed=42
     y_pred = model.predict(X_valid)
     return model, np.sqrt(mean_squared_error(y_valid, y_pred)), r2_score(y_valid, y_pred)
 
+import os
+import pickle
+def save_model_params(model, outdir, fname):
+    model.get_feature_importance(prettified=True).to_csv(os.path.join(outdir,f'{fname}_feature_importance.csv'))
+    model.save_model(os.path.join(outdir,f'{fname}_model.cbm'))
+    evals_result = model.get_evals_result()
+
+    # with open('evals_result.pkl', 'rb') as f:
+    # evals_result = pickle.load(f)
+    # Save evals_result using pickle
+    with open(os.path.join(outdir,f'{fname}_evals_result.pkl'), 'wb') as f:
+        pickle.dump(evals_result, f)
+
 
 def train_model(train_data, valid_data, target_col, features_col, output_dir, 
                 model_type="catboost", num_rounds=10000, seed=42):
@@ -137,9 +150,11 @@ def train_model(train_data, valid_data, target_col, features_col, output_dir,
     # Train the model and calculate metrics
     model, rmse, r2 = try_gpu_or_cpu(model_type, X_train, y_train, X_valid, y_valid, num_rounds, seed)
 
+    fname = f"{model_type}_{num_rounds}_{seed}"
     # Define paths for model and error metrics
     model_path = os.path.join(output_dir, f"{model_type}_{num_rounds}_{seed}_model.txt")
     error_path = os.path.join(output_dir, f"{model_type}_{num_rounds}_{seed}_metrics.csv")
+    save_model_params(model, outdir=output_dir,fname=fname)
 
     # Save the model
     if model_type == "catboost":

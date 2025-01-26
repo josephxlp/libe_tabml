@@ -200,13 +200,13 @@ def full_pipeline(outdir,model_type="catboost", num_rounds=100,
     if N is not None:
         print_context('running:: read_tiles_dosample.....')
         df = read_tiles_dosample(fparquet_list, tcol, rcol, N)
-        out_dpath = f'{outdir}/train_cb_bysample/{X}/{yvar}/iter{num_rounds}_n{N}_{mN}'
+        out_dpath = f'{outdir}/cb_trainbye/{X}/{yvar}/iter{num_rounds}_n{N}_{mN}_s{len(seedlist)}'
         print(f"Output directory created or already exists: {out_dpath}")
     else:
         print_context('running:: read_tiles_nosample ....')
         df = read_tiles_nosample(fparquet_list,rcol,tcol)
         L = len(df)
-        out_dpath = f'{outdir}/train_cb_bysample/{X}/{yvar}/iter{num_rounds}_n{L}_{mN}'
+        out_dpath = f'{outdir}/cb_trainbye/{X}/{yvar}/iter{num_rounds}_n{L}_{mN}_s{len(seedlist)}'
 
 
     os.makedirs(out_dpath, exist_ok=True)
@@ -276,20 +276,27 @@ fcol = ['egm08', 'egm96', 'tdem_hem',
         'multi_s2_band1', 'multi_s2_band2', 'multi_s2_band3']##, 'edem_w84']
 
 
+model_type="catboost"
+outdir = MODEL_REPO_DPATH
+N = None # to load the all dataset , if value, will sample N rows , eg. N=12, 12rows 
+#num_rounds_list = [2000,5000,10_000]
+
+
 #N = 10_000
 ##X= 90 #d:1000:1 5000:1 10000:1#20000:
 #X = 30 #d:1000:1 5000:1 10000:1
 X = 12 #d:1000:1 5000:1 10000:1
-num_rounds = 1000#10_000 
+# num_rounds = 10000#10_000 
+num_rounds_list = [15000]
 seedlist = [13,16,21,42,43,
             53,66,73,82,93] # goal is to do 10 ensemble 
+
+#num_rounds_list, seedlist = [100], [100]
+#N = 1000
 #-------------------------------------------------------------#
-model_type="catboost"
-outdir = MODEL_REPO_DPATH
-N = None # to load the all dataset , if value, will sample N rows , eg. N=12, 12rows 
-num_rounds_list = [2000,5000,10_000]
-Lnum_rounds_list = len(num_rounds_list)
+
 if __name__ == "__main__":
+    Lnum_rounds_list = len(num_rounds_list)
     if N is None:
         m = 'all'
     else:
