@@ -7,6 +7,18 @@ from glob import glob
 from concurrent.futures import ThreadPoolExecutor
 from scipy.stats import zscore
 
+
+def get_parquets_and_geotifs_by_tile(RES_DPATH, X, tilenames,vending_all):
+    fparquet_list,tile_files_list = list_files_by_tilenames(RES_DPATH, X, tilenames)
+    assert len(fparquet_list) == len(tile_files_list), 'len(fparquet_list) != len(tile_files_list)'
+    _, fparquet_list = tile_files_to_parquet_parallel(tilenames, 
+                                                       RES_DPATH, 
+                                                       X, 
+                                                       vending_all)
+    
+    return fparquet_list,tile_files_list  
+
+
 def read_tiles_nosample(fparquet_list,rcol,tcol):
     df = df = pd.read_parquet(fparquet_list)
     print(f"Encoding nulls from column {rcol}...")
