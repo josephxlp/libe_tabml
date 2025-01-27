@@ -182,10 +182,10 @@ start_time = time.perf_counter()
 X = 12 #90 
 num_tiles = 6
 minutes = 1#60#2
-hours = 8# 4
+hours = 9# 4
 time_limit_add = 900 # 15 mins 
 outdir = MODEL_REPO_DPATH
-presets = "medium_quality" #high_quality:1#good_quality:1#medium_quality:#best_quality:
+presets = "medium_quality" #medium_quality:1@8h #good_quality:1@9h #medium_quality:#best_quality:
 yvar = "zdif"
 tcol = 'edem_w84'
 rcol = 'multi_dtm_lidar'
@@ -200,7 +200,7 @@ time_limit = set_time_limit(minutes, hours)
 # Get multipliers and Nsamples outside the main workflow
 # [0.1,0.5, 1, 3, 5, 6,10,15
 multipliers, Nsamples = get_multipliers_and_samples(
-    X, num_tiles,[1, 3, 5,8,10]) 
+    X, num_tiles,[1, 3, 6,8,10]) 
 
 if Nsamples is None:
     exit()
