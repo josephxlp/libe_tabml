@@ -12,7 +12,7 @@ from uvars import (tilenames_mkd, tilenames_tls,tilenames_rgn,
 
 from uvars import aux_ending12,s1_ending12,s2_ending12,tar_ending12
 from predutitls import ag_mbest_predict_workflow
-from prevars import outdir,ag_models_dpath
+from pred.predvars import outdir,ag_models_dpath
 
 
 def main():
