@@ -11,8 +11,14 @@ from uvars import (tilenames_mkd, tilenames_tls,tilenames_rgn,
                    tilenames_lidar,RES_DPATH)
 
 from uvars import aux_ending12,s1_ending12,s2_ending12,tar_ending12
+from predvars import pred_testing_dpath
 from predutitls import cb_predict_workflow
 
+
+
+
+modelpath = "/media/ljp238/12TBWolf/RSPROX/OUTPUT_TILES/MODELS/train_cb_bysample/12/zdif/iter20000_n81000000_eq6xtile/catboost_20000_42_model.txt"
+dirname = str(modelpath).split('/')[-2]
 def main():
     start_time = time.time()
 
@@ -26,13 +32,10 @@ def main():
     X = 12
     ps = 9001
     tilenames = tilenames_mkd + tilenames_tls + tilenames_rgn # + tilenames_lidar
-    bsize = 512
-    #modelpath = 'path/to/model'
-    #outdir = 'path/to/output'
-    modelpath = "/media/ljp238/12TBWolf/RSPROX/OUTPUT_TILES/MODELS/train_cb_bysample/12/zdif/iter10000_n81000000_eq6xtile/catboost_10000_42_model.txt"
-    modelpath = "/media/ljp238/12TBWolf/RSPROX/OUTPUT_TILES/MODELS/train_cb_bysample/12/zdif/iter10000_n236435487_eqallxtile/catboost_10000_43_model.txt"
-    dirname = "iter10000_n236435487_eqallxtile"
-    outdir = f"/media/ljp238/12TBWolf/RSPROX/OUTPUT_TILES/PREDICTIONS/TESTING/{dirname}"
+    bsize = 256
+   
+    outdir = f"{pred_testing_dpath}/{dirname}"
+    print(f'outdir::\n{outdir}')
     os.makedirs(outdir, exist_ok=True)
 
     fparquet_list, tile_files_list = get_parquets_and_geotifs_by_tile(RES_DPATH, X, tilenames, vending_all)
@@ -40,6 +43,7 @@ def main():
     total_workflow_time = 0
     for fparquet, tile_files in zip(fparquet_list, tile_files_list):
         workflow_time = cb_predict_workflow(outdir, modelpath, fparquet, tile_files, fcol, yvar, tcol, ps, bsize)
+        print(f'predicting from {fparquet}')
         total_workflow_time += workflow_time
 
     elapsed_time = time.time() - start_time
@@ -54,3 +58,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    print(dirname)
+    print(modelpath)
