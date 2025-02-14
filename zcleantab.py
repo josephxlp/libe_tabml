@@ -54,7 +54,8 @@ pdem = 'negroaoidtm'
 # s1col =  ['multi_s1_band1','multi_s1_band2']
 # s2col = ['multi_s2_band1', 'multi_s2_band2', 'multi_s2_band3']
 roi = 'mkd' #'tls'#'rng'
-roi = 'tls'
+#roi = 'rng'
+#roi = 'tls'
 if __name__ == '__main__':
 #for roi in ['mkd', 'tls', 'rng']:
     if roi == 'mkd':
