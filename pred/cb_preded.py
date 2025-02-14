@@ -19,6 +19,7 @@ ti = time.perf_counter()
 model_dir = "/media/ljp238/12TBWolf/RSPROX/OUTPUT_TILES/MODELS/cb_trainbye/12/zdif/iter15000_n236435487_eqallxtile_s3"
 X = 12 
 ps = 9001
+pct_workers = 0.5
 bsize = 256 # match with grid size X 
 tilenames = tilenames_mkd
 tilenames = tilenames_mkd+tilenames_tls+tilenames_rgn
@@ -35,43 +36,45 @@ fcol = ['egm08', 'egm96', 'tdem_hem', 'multi_s1_band1', 'multi_s1_band2',
 #---------------------------------------------------------------------------------------------#
 
 
-def process_tile(fparquet, tile_files, outdir, model_dir, dirname, fcol, yvar, tcol, ps, bsize):
-    """Wrapper for the cbe_predict_workflow function to handle a single task."""
-    print(f"Processing {fparquet}")
-    return cbe_predict_workflow(outdir, model_dir, dirname, fparquet, tile_files, fcol, yvar, tcol, ps, bsize)
+# def process_tile(fparquet, tile_files, outdir, model_dir, dirname, fcol, yvar, tcol, ps, bsize):
+#     """Wrapper for the cbe_predict_workflow function to handle a single task."""
+#     print(f"Processing {fparquet}")
+#     return cbe_predict_workflow(outdir, model_dir, dirname, fparquet, tile_files, fcol, yvar, tcol, ps, bsize)
+
+# if __name__ == "__main__":
+#     ti = time.perf_counter()
+#     num_workers = int(os.cpu_count() * pct_workers)
+#     # Retrieve lists of parquet and GeoTIFF files
+#     fparquet_list, tile_files_list = get_parquets_and_geotifs_by_tile(RES_DPATH, X, tilenames, vending_all)
+    
+#     tasks = []
+#     with ProcessPoolExecutor(max_workers=num_workers) as ppe:
+#         for fparquet, tile_files in zip(fparquet_list, tile_files_list):
+#             # Submit tasks to the executor
+#             tasks.append(
+#                 ppe.submit(process_tile, fparquet, tile_files, outdir, model_dir, dirname, fcol, yvar, tcol, ps, bsize)
+#             )
+        
+#         # Monitor the completion of tasks
+#         for future in as_completed(tasks):
+#             try:
+#                 result = future.result()
+#                 print(f"Task completed successfully: {result}")
+#             except Exception as e:
+#                 print(f"Task failed with exception: {e}")
+
+#     tf = time.perf_counter() - ti 
+#     print(f'run.time ={tf/60} min')
+#     print(f'dirname {dirname}\n fullpath:{model_dir}')
+
 
 if __name__ == "__main__":
     ti = time.perf_counter()
-    # Retrieve lists of parquet and GeoTIFF files
     fparquet_list, tile_files_list = get_parquets_and_geotifs_by_tile(RES_DPATH, X, tilenames, vending_all)
-    
-    tasks = []
-    with ProcessPoolExecutor() as ppe:
-        for fparquet, tile_files in zip(fparquet_list, tile_files_list):
-            # Submit tasks to the executor
-            tasks.append(
-                ppe.submit(process_tile, fparquet, tile_files, outdir, model_dir, dirname, fcol, yvar, tcol, ps, bsize)
-            )
-        
-        # Monitor the completion of tasks
-        for future in as_completed(tasks):
-            try:
-                result = future.result()
-                print(f"Task completed successfully: {result}")
-            except Exception as e:
-                print(f"Task failed with exception: {e}")
-
+    for fparquet,tile_files in zip(fparquet_list,tile_files_list):
+        print(fparquet)
+        cbe_predict_workflow(outdir,model_dir,dirname,fparquet,tile_files,fcol,yvar,tcol,ps,bsize)
     tf = time.perf_counter() - ti 
     print(f'run.time ={tf/60} min')
-    print(f'dirname {dirname}\n fullpath:{model_dir}')
-
-
-# if __name__ == "__main__":
-#     fparquet_list, tile_files_list = get_parquets_and_geotifs_by_tile(RES_DPATH, X, tilenames, vending_all)
-#     for fparquet,tile_files in zip(fparquet_list,tile_files_list):
-#         print(fparquet)
-#         #cbe_predict_workflow(outdir,model_dir,dirname,fparquet,tile_files,fcol,yvar,tcol,ps,bsize)
-#     tf = time.perf_counter() - ti 
-#     print(f'run.time ={tf/60} min')
 
 

@@ -7,7 +7,7 @@ from catboost import CatBoostRegressor, Pool
 import lightgbm as lgb
 import xgboost as xgb
 import torch
-
+import pickle
 from utilsdf import remove_outlier
 import time
 
@@ -54,22 +54,7 @@ def prepare_data(train_data, valid_data, target_col, features_col):
     return X_train, y_train, X_valid, y_valid
 
 def try_gpu_or_cpu(model_type, X_train, y_train, X_valid, y_valid, num_rounds=10000,seed=42):
-    """
-    Attempts to use GPU for training. Falls back to CPU if GPU is unavailable or fails.
 
-    Parameters:
-        model_type (str): The model type to use ("xgboost", "lightgbm", "catboost").
-        X_train (pd.DataFrame): Training features.
-        y_train (pd.Series): Training target.
-        X_valid (pd.DataFrame): Validation features.
-        y_valid (pd.Series): Validation target.
-        num_rounds (int): Number of training iterations.
-
-    Returns:
-        model: Trained model.
-        rmse (float): Root Mean Squared Error on validation set.
-        r2 (float): R-squared score on validation set.
-    """
     try:
         if model_type == "xgboost":
             return train_xgboost(X_train, y_train, X_valid, y_valid, num_rounds, seed,gpu=True)
@@ -128,8 +113,7 @@ def train_catboost(X_train, y_train, X_valid, y_valid, num_rounds=10000, seed=42
     y_pred = model.predict(X_valid)
     return model, np.sqrt(mean_squared_error(y_valid, y_pred)), r2_score(y_valid, y_pred)
 
-import os
-import pickle
+
 def save_model_params(model, outdir, fname):
     model.get_feature_importance(prettified=True).to_csv(os.path.join(outdir,f'{fname}_feature_importance.csv'))
     model.save_model(os.path.join(outdir,f'{fname}_model.cbm'))

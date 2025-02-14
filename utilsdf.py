@@ -8,6 +8,8 @@ from concurrent.futures import ThreadPoolExecutor
 from scipy.stats import zscore
 
 
+
+
 def get_parquets_and_geotifs_by_tile(RES_DPATH, X, tilenames,vending_all):
     fparquet_list,tile_files_list = list_files_by_tilenames(RES_DPATH, X, tilenames)
     assert len(fparquet_list) == len(tile_files_list), 'len(fparquet_list) != len(tile_files_list)'
