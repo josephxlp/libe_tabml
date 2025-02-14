@@ -98,7 +98,7 @@ config = {
     "outdir": MODEL_REPO_DPATH,
     "dirname": "dev",
     "X": 12,
-    "N": 1000,
+    "N": None,
     "m": None,
     "yvar": "zdif",
     "tcol": "edem_w84",
@@ -109,7 +109,7 @@ config = {
         "multi_s2_band1", "multi_s2_band2", "multi_s2_band3"
     ],
     "model_type": "catboost",
-    "num_rounds": 1001,
+    "num_rounds": 30_000,
     "seedlist": [21, 43],
 }
  
