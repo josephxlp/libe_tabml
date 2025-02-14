@@ -45,39 +45,44 @@ def notify_send(title: str, message: str, duration: int = 5):
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 n=100_000
 px = 30
-fcol = ['edem_w84','multi_s1_band2', 'multi_s2_band1', 'multi_s2_band2', 'multi_s2_band3']
+# fcol = ['edem_w84','multi_s1_band2', 'multi_s2_band1', 'multi_s2_band2', 'multi_s2_band3']
 ldem = 'multi_dtm_lidar'
 pdem = 'negroaoidtm'
-rcol = 'edem_w84'
-ycol = 'zdif'
+# rcol = 'edem_w84'
+# ycol = 'zdif'
 
-s1col =  ['multi_s1_band1','multi_s1_band2']
-s2col = ['multi_s2_band1', 'multi_s2_band2', 'multi_s2_band3']
+# s1col =  ['multi_s1_band1','multi_s1_band2']
+# s2col = ['multi_s2_band1', 'multi_s2_band2', 'multi_s2_band3']
 roi = 'mkd' #'tls'#'rng'
+#roi = 'rng'
+#roi = 'tls'
 if __name__ == '__main__':
 #for roi in ['mkd', 'tls', 'rng']:
     if roi == 'mkd':
         fparquet_list = ldar_mkd
         print(f'processing {roi}')
-        df = read_tiles_nosample(fparquet_list,rcol,ldem)
+        df = read_tiles_nosample(fparquet_list,ldem,ldem)
+        print(f'cols: {list(df.columns)}')
         df = df.drop(pdem,axis=1)
-        df[ycol] = df[rcol].subtract(df[ldem])
-        s1tcol = [ldem,rcol]+s1col
-        s2tcol = [ldem,rcol]+s2col
+        print(f'cols: {list(df.columns)}')
+        #df[ycol] = df[rcol].subtract(df[ldem])
+        #s1tcol = [ldem,rcol]+s1col
+        #s2tcol = [ldem,rcol]+s2col
         outdir = f"{parq_outdir}/{roi}"
         os.makedirs(outdir, exist_ok=True)
         pqt = f"{parq_outdir}/{roi}/clean_data_"
-        print(df.columns.tolist())
         save_chunks_as_parquet_par(df, chunk_size=n, output_prefix=pqt, num_workers=px)
         
     elif roi == 'tls':
         fparquet_list = ldar_tls
         print(f'processing {roi}')
-        df = read_tiles_nosample(fparquet_list,rcol,ldem)
+        df = read_tiles_nosample(fparquet_list,ldem,ldem) #rcol>ldem  for now 
+        print(f'cols: {list(df.columns)}')
         df = df.drop(pdem,axis=1)
-        df[ycol] = df[rcol].subtract(df[ldem])
-        s1tcol = [ldem,rcol]+s1col
-        s2tcol = [ldem,rcol]+s2col
+        print(f'cols: {list(df.columns)}')
+        #df[ycol] = df[rcol].subtract(df[ldem])
+        # s1tcol = [ldem,rcol]+s1col
+        #s2tcol = [ldem,rcol]+s2col
         outdir = f"{parq_outdir}/{roi}"
         os.makedirs(outdir, exist_ok=True)
         pqt = f"{parq_outdir}/{roi}/clean_data_"
@@ -87,14 +92,16 @@ if __name__ == '__main__':
     elif roi == 'rng':
         fparquet_list = ldar_rgn
         print(f'processing {roi}')
-        df = read_tiles_nosample(fparquet_list,rcol,pdem)
+        df = read_tiles_nosample(fparquet_list,pdem,pdem)
+        print(f'cols: {list(df.columns)}')
         df = df.drop(ldem,axis=1)
-        s1tcol = [pdem,rcol]+s1col
-        s2tcol = [pdem,rcol]+s2col 
+        print(f'cols: {list(df.columns)}')
+        #s1tcol = [pdem,rcol]+s1col
+        #s2tcol = [pdem,rcol]+s2col 
         outdir = f"{parq_outdir}/{roi}"
         os.makedirs(outdir, exist_ok=True)
         pqt = f"{parq_outdir}/{roi}/clean_data_"
-        df.rename(columns={pdem:ldem})
+        df.rename(columns={pdem:ldem}, inplace=True)
         save_chunks_as_parquet_par(df, chunk_size=n, output_prefix=pqt, num_workers=px)
         print(df.columns.tolist())
 
