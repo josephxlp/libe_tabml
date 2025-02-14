@@ -287,7 +287,7 @@ N = None # to load the all dataset , if value, will sample N rows , eg. N=12, 12
 #X = 30 #d:1000:1 5000:1 10000:1
 X = 12 #d:1000:1 5000:1 10000:1
 # num_rounds = 10000#10_000 
-num_rounds_list = [15000]
+num_rounds_list = [5000,10000,15000,20000,50000]
 seedlist = [13,16,21,42,43,
             53,66,73,82,93] # goal is to do 10 ensemble 
 

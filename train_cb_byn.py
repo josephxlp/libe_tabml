@@ -7,169 +7,8 @@ from pprint import pprint
 from uvars import MODEL_REPO_DPATH, RES_DPATH,tilenames_lidar
 from ud_tilepartquets import dropnulls_bycol,check_fillnulls,list_files_by_tilenames
 from utilsml import train_model
+from utils import print_context,read_tiles_bysample,
 
-def print_context(text):
-    print(' ')
-    """
-    Prints the given text in a styled format, mimicking SAGA GIS console output.
-
-    Parameters:
-        text (str): The text to print.
-    """
-    # Border symbols
-    border_char = "=" * 60
-    padding_char = " " * 4
-
-    # Print formatted text
-    print(border_char)
-    print(f"{padding_char}ML - Process Log")
-    print(border_char)
-
-    for line in text.split("\n"):
-        print(f"{padding_char}{line}")
-
-    print(border_char)
-
-def measure_time_beautifully(task_description, task_function, *args, **kwargs):
-    """
-    Measures the execution time of a given function and prints the elapsed time in various units.
-
-    Parameters:
-        task_description (str): A description of the task being measured.
-        task_function (callable): The function to execute and measure.
-        *args: Positional arguments to pass to the task_function.
-        **kwargs: Keyword arguments to pass to the task_function.
-    """
-    # Start the timer
-    start_time = time.perf_counter()
-
-    # Execute the task function
-    result = task_function(*args, **kwargs)
-
-    # Stop the timer
-    end_time = time.perf_counter()
-
-    # Calculate elapsed time
-    elapsed_seconds = end_time - start_time
-    elapsed_minutes = elapsed_seconds / 60
-    elapsed_hours = elapsed_minutes / 60
-    elapsed_days = elapsed_hours / 24
-
-    # Border symbols
-    border_char = "=" * 60
-    padding_char = " " * 4
-
-    # Print the execution time beautifully
-    print(border_char)
-    print(f"{padding_char}Task Performance Report")
-    print(border_char)
-    print(f"{padding_char}Task: {task_description}")
-    print(f"{padding_char}Elapsed Time:")
-    print(f"{padding_char * 2}{elapsed_seconds:.2f} seconds")
-    print(f"{padding_char * 2}{elapsed_minutes:.2f} minutes")
-    print(f"{padding_char * 2}{elapsed_hours:.2f} hours")
-    print(f"{padding_char * 2}{elapsed_days:.2f} days")
-    print(border_char)
-
-    return result
-
-
-def encode_nulls_bycol(df, col, lval, hval):
-    """
-    Replace invalid or out-of-range values in a specified column of a DataFrame with np.nan.
-
-    Parameters:
-        df (pandas.DataFrame): The input DataFrame.
-        col (str): The name of the column to process.
-        lval (float): The lower bound of acceptable values.
-        hval (float): The upper bound of acceptable values.
-
-    Returns:
-        pandas.DataFrame: A modified DataFrame with invalid values replaced by np.nan.
-    """
-    # Replace -9999 and -9999.0 with np.nan
-    df[col] = df[col].replace([-9999, -9999.0], np.nan)
-    
-    # Replace values less than lval or greater than hval with np.nan
-    df.loc[(df[col] < lval) | (df[col] > hval), col] = np.nan
-    
-    return df
-
-def read_tiles_nosample(fparquet_list,rcol,tcol):
-    df = df = pd.read_parquet(fparquet_list)
-    print(f"Encoding nulls from column {rcol}...")
-    df = encode_nulls_bycol(df, col=rcol, lval=-40, hval=1000)
-    print(f"Dropping nulls from column '{rcol}'...")
-    df = dropnulls_bycol(df, col=rcol)
-    print(f"Encoding nulls from column {tcol}...")
-    df = encode_nulls_bycol(df, col=tcol, lval=-40, hval=1000)
-    print(f"Dropping nulls from column '{tcol}'...")
-    df = dropnulls_bycol(df, col=tcol)
-    df = check_fillnulls(df)
-    return df 
-
-
-def read_tiles_bysample(fparquet_list, tcol, rcol, N):
-    """
-    Processes a list of parquet files by encoding nulls, dropping rows with nulls,
-    sampling rows, and concatenating the results.
-
-    Parameters:
-        fparquet_list (list of str): List of file paths to parquet files.
-        tcol (str): Target column to process for null encoding and dropping.
-        rcol (str): Reference column to process for null encoding and dropping.
-        N (int): Number of rows to sample from each file.
-
-    Returns:
-        pd.DataFrame: A concatenated DataFrame of processed samples.
-    """
-    dflist = []
-    for fparquet in fparquet_list:
-        try:
-            # Read parquet file
-            df = pd.read_parquet(fparquet)
-            print(f"Processing file: {os.path.basename(fparquet)}")
-            
-            # Encode nulls
-            print(f"Encoding nulls from column {tcol}...")
-            df = encode_nulls_bycol(df, col=tcol, lval=-40, hval=1000)
-            print(f"Encoding nulls from column {rcol}...")
-            df = encode_nulls_bycol(df, col=rcol, lval=-40, hval=1000)
-            
-            # Drop nulls
-            print(f"Dropping nulls from column '{tcol}'...")
-            df = dropnulls_bycol(df, col=tcol)
-            print(f"Dropping nulls from column '{rcol}'...")
-            df = dropnulls_bycol(df, col=rcol)
-            
-            # Sampling
-            print(f"Sampling from {os.path.basename(fparquet)}...")
-            L = len(df)
-            if L < N:
-                print(f"Warning: Requested sample size {N} exceeds available rows {L}. Sampling all rows instead.")
-                #df = df.sample(L)
-                df = df.sample(frac=1)
-            else:
-                df = df.sample(N)
-            
-            # Append to list
-            if not df.empty:
-                dflist.append(df)
-            else:
-                print(f"Warning: DataFrame from {os.path.basename(fparquet)} is empty after filtering.")
-        
-        except Exception as e:
-            print(f"Error processing file {fparquet}: {e}")
-
-    # Concatenate
-    if dflist:
-        df = pd.concat(dflist, ignore_index=True)
-        df = check_fillnulls(df)
-        print("Final DataFrame columns:", df.columns)
-        return df
-    else:
-        print("Warning: No valid DataFrames to concatenate. Check input files or filtering logic.")
-        return pd.DataFrame()  # Return an empty DataFrame if no valid data was processed
 
 
 def full_pipeline(outdir,model_type="catboost", num_rounds=100, X=12, N=1000,m=None):
@@ -279,7 +118,7 @@ fcol = ['egm08', 'egm96', 'tdem_hem',
 #N = 10_000
 ##X= 90 #d:1000:1 5000:1 10000:1#20000:
 #X = 30 #d:1000:1 5000:1 10000:1
-X= 12 #d:1000:1 5000:1 10000:1
+X= 30 #d:1000:1 5000:1 10000:1
 num_rounds = 20_000 
 #-------------------------------------------------------------#
 model_type="catboost"
@@ -287,7 +126,8 @@ outdir = MODEL_REPO_DPATH
 num_tiles=6
 if X == 12:
     #multipliers=[0.1, 0.2, 0.3, 0.5, 0.8, 1, 2, 3,6]
-    multipliers=[0.1, 0.3, 0.5, 1, 2, 3,6]
+    #multipliers=[0.1, 0.3, 0.5, 1, 2, 3,6]
+    multipliers =[5,6,10]
     target_samples=9000*9000 #9001
     
     Nsamples = estimate_nsamples(target_samples, num_tiles, multipliers)

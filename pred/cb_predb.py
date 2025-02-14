@@ -1,8 +1,6 @@
 import os
 import sys
 import time
-
-
 from paths import libpath
 sys.path.append(libpath)
 from utilsdf import check_fillnulls 
@@ -15,10 +13,12 @@ from predvars import pred_testing_dpath
 from predutitls import cb_predict_workflow
 
 
-
-
 modelpath = "/media/ljp238/12TBWolf/RSPROX/OUTPUT_TILES/MODELS/train_cb_bysample/12/zdif/iter20000_n81000000_eq6xtile/catboost_20000_42_model.txt"
 dirname = str(modelpath).split('/')[-2]
+
+# make this parallell and keep the single code as comment :: usefull for debagging 
+
+
 def main():
     start_time = time.time()
 
